@@ -1,0 +1,502 @@
+
+
+PythonOCC基础使用：基础装配——工业机器人装配
+原创
+小新快跑123 最后发布于2019-05-25 20:03:38 阅读数 675 
+
+收藏 
+展开 
+此章节是一脉相承于基础建模指令，由于这一章节没有opencascade官方铺路，为完全原创。注意该装配是指具有相应装配关系及约束存在的，并非只是实体相对位置的存在。
+下面将以装配工业机器人手作为案例进行讲解，将分为以下几个部分：
+1
+2
+3
+4
+将会使用到以下函数：
+AIS_InteractiveObject
+instance=AIS_ConnectedInteractive()
+instance.Connect()
+assembly=AIS_MultipleConnectedInteractive()
+assembly.Connect()
+1
+2
+3
+4
+5
+AIS_ConnectedInteractive 类，断开上一个视图的连接，并将高亮显示模式设置为0。这将突出显示线框演示文稿atypeofpresentation3d.top_AllView禁用隐藏线删除。（Disconnects the previous view and sets highlight mode to 0. This highlights the wireframe presentation aTypeOfPresentation3d. Top_AllView deactivates hidden line removal.）
+有如下函数
+AcceptShapeDecomposition()
+Informs the graphic context that the interactive Object may be decomposed into sub-shapes for dynamic selection.
+Return type: bool
+Connect()
+1.Establishes the connection between the Connected Interactive Object, anotherIobj, and its reference.
+Parameters: anotherIObj (Handle_AIS_InteractiveObject &) –
+Return type: void
+Establishes the connection between the Connected Interactive Object, anotherIobj, and its reference. Locates instance in aLocation.
+Parameters:
+anotherIobj (Handle_AIS_InteractiveObject &) –
+aLocation (gp_Trsf) –
+Return type：void
+ConnectedTo()
+Returns the connection with the reference Interactive Object.
+Return type: Handle_AIS_InteractiveObject
+Disconnect()
+Clears the connection with a source reference. The presentation will no longer be displayed. Warning Must be done before deleting the presentation.
+Return type: None
+HasConnection()
+Returns true if there is a connection established between the presentation and its source reference.
+Return type: bool
+
+参考文献：
+实例参考 ：https://opencascade.blogspot.com/2013/11/ais-connecting-objects.html
+函数查询： https://cdn.rawgit.com/tpaviot/pythonocc-core/804f7f3/doc/apidoc/0.18.1/OCC.AIS.html?highlight=ais_connectedinteractive#OCC.AIS.AIS_ConnectedInteractive
+
+点赞 
+
+收藏
+
+分享
+
+
+ 
+小新快跑123 
+发布了101 篇原创文章 · 获赞 42 · 访问量 7万+
+私信 
+关注
+
+
+
+ 
+ 
+
+325xbang2个月前没有更新么?
+
+
+PythonOCC 3D图形库学习—导入STEP模型 
+阅读数 337 
+PythonOCC comes with importers/exporters for the most commonly used standard data files format in en... 
+博文
+来自： weixin_34162401的博客
+pythonocc第一个程序 
+12-09
+pythonocc第一个小程序，简单实现了点在3d查看器中的显示 
+下载
+pythonocc基础使用：模型信息获取（装配关系，材料，颜色）XCAF 
+阅读数 424 
+占坑。。。 
+博文
+来自： weixin_42755384的博客
+机器人实用Python代码合集，帮你搞定自主导航 |GitHub高热 
+阅读数 3004 
+... 
+博文
+来自： 量子位
+
+
+PythonOCC 教程1: 安装 
+阅读数 5785 
+PythonOCC的安装提供了多种方式用于安装。一. 对于刚开始上手python的同学，可以直接使用编译好的Anaconda包来进行傻瓜式安装：对于下面代码，若想使用python2.x的版本，则将其中... 
+博文
+来自： QJXLSQQYS123的博客
+用python语言编写六轴机器人正逆运动学方程 
+04-07
+有没有人用python语言写过六轴机器人正逆运动学方程，跪求！！！有经验的可否交流探讨一下！
+论坛
+Python可以干什么？牛人用Python写了个会做诗的机器人 
+阅读数 486 
+Python可以干什么?用Python写个会做诗的机器人怎么样?今天小编就带领大家，利用自然语言处理技术和聊天机器人结合，做一个自动做诗的聊天机器人，你激动么?快来看看吧：The dog , whic... 
+博文
+几个有意思的工业机器人应用 
+阅读数 433 
+1、  娱乐随着工业机器人安全控制技术的发展，机器人厂商开始尝试将机器人用在娱乐方面。以后会专门介绍一下ABB和KUKA在安全控制方面的内容。KUKA的娱乐机器人，看起来好爽：http://v.you... 
+博文
+来自： iRobot
+【个人项目整理】机器人、三维模型 
+阅读数 605 
+一、五轴舵机机器人https://github.com/Jelatine/arm-robot-arduino二、3D高达游戏https://github.com/Jelatine/pi_opengl三... 
+博文
+来自： jelatine的博客
+pythonocc的安装_a1099313374的博客-CSDN博客 
+1-7 
+PythonOCC基础使用:建模——布尔运算(Boolean operatio..._CSDN博客 
+1-26 
+
+
+Python与机器人技术 
+阅读数 74 
+http://gashero.iteye.com/blog/2157346 
+博文
+来自： weixin_34381666的博客
+PythonOCC基础使用:建模——矩阵变换(平移/旋转/缩放/..._CSDN博客 
+1-6 
+PythonOCC 教程0: 介绍与入门方法_QJXLSQQYS123的博客-CSDN博客 
+1-6 
+（必读）工业机器人基础教程——快速入门学习 
+阅读数 5235 
+六轴、水平关节（SCARA）、DELTA等不同类型的机器人入门基础教程，学完这些，您将成为一名优秀的机器人应用工程师！到2020年，工业机器人密度达到每万名员工使用100台以上。我国工业机器人市场将高... 
+博文
+来自： qq_28660913的博客
+关注
+weixin_34162401
+
+4551篇文章
+排名:千里之外
+
+关注
+量子位
+
+2145篇文章
+排名:1000+
+
+关注
+飞飞机的沐沐风
+
+2篇文章
+排名:千里之外
+
+PythonOCC基础使用:建模——倒角倒圆(二维+三维)_weixi..._CSDN博客 
+1-11 
+PythonOCC安装步骤与注意事项_python,bim,anaconda_sha..._CSDN博客 
+1-11 
+PythonOCC基础使用：建模——布尔运算（Boolean operation） 
+阅读数 410 
+布尔剪（Boolean cut）my_cylinder = BRepPrimAPI_MakeCylinder (gp_Ax2 (gp_Pnt(-3,5,2),gp_Dir (1,0,1)),1,20)... 
+博文
+来自： weixin_42755384的博客
+pythonocc的安装 
+阅读数 640 
+https://pythonocc.wordpress.com/2013/03/04/installing-on-ubuntu-12-04/官方教程https://github.com/tpaviot... 
+博文
+来自： a1099313374的博客
+PythonOCC进阶学习:界面设计——重新打造主界面 - weix..._CSDN博客 
+11-18 
+pythonocc基础使用:2.提取曲线上的点位信息或者曲面上..._CSDN博客 
+11-21 
+python将工业机器人标定程序由keba格式转换为固高格式 
+阅读数 103 
+在工业机器人标定过程中,激光跟踪仪可以输出keba格式的机器人程序(keba.txt).但是无法输出固高格式的程序(gugao.txt). 对比两种格式,可以使用一个简单的python程序进行转换(k... 
+博文
+来自： xiaoding_ding的专栏
+
+
+...导入STEP模型_Python_weixin_33857679的博客-CSDN博客... 
+2-14 
+PythonOCC外延学习：cadquery 
+阅读数 191 
+关于CadQueryCadQuery2.0是pythonocc的高级封装库，使用了Qt语言作为界面语言，是一款正在起步的命令行建模软件，由于pythonocc的使命在于封装opencascade而非关... 
+博文
+来自： weixin_42755384的博客
+自己动手开发智能聊天机器人完全指南（附python完整源码） 
+阅读数 3091 
+一、前言人工智能时代，开发一款自己的智能问答机器人，一方面提升自己的AI能力，另一方面作为转型AI的实战练习。在此把学习过程记录下来，算是自己的笔记。二、正文2.1下载pyaiml下载pyaiml2.... 
+博文
+来自： weixin_34159110的博客
+用Python编程控制Cozmo机器人（Python环境搭建和工具准备） 
+阅读数 1万+ 
+在b站看了介绍视频，这个小玩意儿可以说相当炫酷了这是它的官网准备给Brother买的小玩具Cozmo，官方提供了SDK用于Python编程，于是自己也研究一下，慢慢更新这篇文章，方便各位想编程的。推特... 
+博文
+来自： 学习，不哔哔
+NAO6机器人python环境完整搭建 
+阅读数 949 
+NAO6机器人Windows下python环境完整搭建nao机器人随着机器人各种的比赛使用得越来越多，但是很多人对NAO机器人在Windows下的python环境搭建完全不知道如何下手。小编本人也是像... 
+博文
+来自： Liaolingfeng的博客
+PythonOCC 教程0: 介绍与入门方法 
+阅读数 4859 
+PythonOCC是 tpaviot 利用python封装OpenCASCADE的社区版本而成的开源CAD库，为广大python用户操纵CAD带来了极大的便利。下图是利用pythonOCC绘制的机翼模... 
+博文
+来自： QJXLSQQYS123的博客
+
+
+pythonOCC例子搬运：4.经典瓶子造型 
+阅读数 401 
+这里返回总目录&amp;gt;&amp;gt;返回总目录core_display_signal_slots.py本例从https://github.com/tpaviot/python... 
+博文
+来自： weixin_42755384的博客
+pythonocc自定义对话框 
+12-09
+使用pythonocc为库，以pyqt中的qtdesigner为工具设计一个自定义对话框。 实现了点击 一个点弹出自定义对话框 
+下载
+PythonOCC的安装 
+04-04
+PythonOCC是 tpaviot 利用python封装OpenCASCADE的社区版本而成的开源CAD库，为广大python用户操纵CAD带来了极大的便利。 
+下载
+用python开发机器人技术 
+08-29
+Packt Publishing Learning Robotics using Python，2015年5月版 
+下载
+用Python 写一个机器人陪你聊天（文尾有彩蛋） 
+阅读数 1万+ 
+工作一忙，原来秉烛夜谈的好友现在都很少聊天，微信都成了微信群的天下，鲜有微信好友给你发消息，想要主动发却也找不到开题话题，怎么办？用Python写一个机器人陪自己聊聊天吧。以下是源码及解析，小白都看得... 
+博文
+来自： johngogogo的博客
+pythonOCC例子搬运：1.显示三维轮廓 
+阅读数 444 
+core_display_customize_prs3d.py本例从https://github.com/tpaviot/pythonocc-demos搬运而来运行版本：0.18.1 在其余版本运行不... 
+博文
+来自： weixin_42755384的博客
+python 
+阅读数 292 
+Reason: Incompatible library version: etree.cpython-37m-darwin.so requires version 12.0.0 or later, ... 
+博文
+来自： qq_15092585的博客
+python机器人学习 
+11-29
+python机器人学习技巧，深度学习，人工智能，从基础到高深 
+下载
+机器人概率定位学习笔记第三篇_使用python建立机器人运动函数（move fuction） 
+阅读数 3103 
+本笔记学习于优达学城 Artificial Intelligence for Robotics课程1，假设机器人处在了环形世界，如下图，机器人在各个方块的概率如下，那么机器人向右移动之后，机器人处在各... 
+博文
+来自： 天空中的太阳和月
+入门篇（1）使用Python对NAO机器人编程 
+阅读数 1万+ 
+对于刚刚接触NAO机器人的同学，可能存在的疑问是：使用什么编程语言对NAO机器人进行开发，就官方提供的程序而言，可以通过C++、Python、Choregraphe进行编程。C++效率高但不适合初学者... 
+博文
+来自： zz683693的博客
+机器人研发十大热门编程语言：不死 Java、不朽 C/C ++、新贵 Python 
+阅读数 3万+ 
+流水的编程语言，铁打的Java、C/C++。 
+博文
+来自： CSDN资讯
+人工智障和神经病网络对话--30行python让图灵机器人和茉莉机器人无止尽的瞎扯蛋 
+阅读数 7万+ 
+首先注册申请图灵机器人的API：http://www.tuling123.com/查看一下API的格式，很简单：{ “key”: “APIKEY”, “info”: “北京到上海的飞机”，... 
+博文
+来自： 神棍之路
+[python3]机器人的轨迹规划问题 
+阅读数 774 
+终极实验：机器人路径规划问题一、实验目的要求，利用遗传算法、禁忌搜索、模拟退火或粒子群算法中任选一种算法对其求解，仿真结果画出最短路径。编程实现，写清实现的全部程序，并写出程序每句代码的注释。二、实验... 
+博文
+来自： qq_34761280的博客
+剑指offer 机器人的运动范围 python实现 
+阅读数 1436 
+传送门：传送门#coding=utf-8class Solution: def judge(self, threshold, i, j): # sum(map(int, str(i... 
+博文
+来自： jiachen0212的博客
+教你用Python写一个聊天机器人 
+阅读数 8500 
+程序员有三种美德:懒惰,急躁和傲慢要想实现功能我们需要首先认识一个库，itchatitchat是一个开源的微信个人号接口，通过它你只需要编写简单的代码便能实现复杂的功能如果你没有安装过它，你可以使用下... 
+博文
+来自： 流月的博客
+利用python搭建微信聊天机器人 
+阅读数 1万+ 
+最近一好友将其个人微信号设置为聊天机器人，我也心痒痒，想试一试。首先写一个基于python的简要版微信聊天机器人。具体原理如为：将好友消息转发给图灵机器人，获得图灵机器人的回复后，将消息转发给原好友，... 
+博文
+来自： lin_zhongmu的博客
+用python6行代码实现微信机器人 
+阅读数 2614 
+看到网上有人实现微信机器人，自己找了一些方法，其中tuling机器人需要充值，不然基本用不了，所以选择使用xiaoi机器人。代码如下：# 初始化机器人，扫码登陆bot = Bot()# 搜索名称含有 ... 
+博文
+来自： Man_In_The_Night的博客
+Python初学者好玩案例（二）：听两个聊天机器人互相聊天（15行代码） 
+阅读数 5984 
+无聊的时候，可以听两个聊天机器人互相聊天，可以自己输入一个话题，然后打开沉默，静静的无聊。代码很简单，也就不解释了。from time import sleepimport requestss = i... 
+博文
+来自： qq_18495537的博客
+超简单Python实现微信机器人自动回复 
+阅读数 5万+ 
+下面这个小文章适合初学Python的童鞋哦~~~一个很好用的微信库：itchat拿使用图灵机器人设置自动回复，让机器人跟微信好友傻傻的聊天，机器人比小编还会聊天，无论是对美眉还是汉纸，上来就是爱！爱！... 
+博文
+来自： feengg的博客
+SecureCRT的下载、安装（ 过程非常详细！！值得查看） 
+阅读数 2万+ 
+SecureCRT的下载、安装和破解（ 过程非常详细！！值得查看）简单介绍下SecureCRT一、SecureCRT的下载二、SecureCRT的安装简单介绍下SecureCRTSecureCRT是一... 
+博文
+来自： 超Ren专属
+Java学习的正确打开方式 
+阅读数 28万+ 
+在博主认为，对于入门级学习java的最佳学习方法莫过于视频+博客+书籍+总结，前三者博主将淋漓尽致地挥毫于这篇博客文章中，至于总结在于个人，实际上越到后面你会发现学习的最好方式就是阅读参考官方文档其次... 
+博文
+来自： 程序员宜春的博客
+python json java mysql pycharm android linux json格式 c#常量定义规则 c#发送按键 c#记住帐号密码 c#mvc框架搭建 c#改变td值 c#怎么读取html文件 c#如何跳出整个循环 c# throw的用法 c# 判断域名端口 c#前景怎么样 
+©️2019 CSDN 皮肤主题: 大白 设计师: CSDN官方博客 
+ 
+小新快跑123 
+TA的个人主页 >
+原创
+101
+粉丝
+89
+获赞
+42
+评论
+35
+访问
+7万+
+等级:
+
+周排名:
+6467 
+积分:
+1919 
+总排名:
+3万+ 
+勋章:
+ 
+ 
+ 
+关注
+私信
+
+
+最新文章
+PythonOCC基础使用：点的性质(glsl定义) 
+PythonOCC基础使用：面打孔(holes in face) 
+pythonocc基础使用：导入模型——OCAF(iges/step) 
+three.js小程序：概述 
+PythonOCC封装：2.重新封装pythonocc 
+分类专栏
+ 
+threejs小程序
+1篇
+ 
+webassembly
+2篇
+ 
+assemblyscript
+1篇
+ 
+latex
+3篇
+ 
+pythonocc
+46篇
+ 
+pyqt
+1篇
+ 
+linux
+4篇
+ 
+opencv
+23篇
+ 
+cadquery
+ 
+django
+1篇
+ 
+Python
+2篇
+ 
+c++
+1篇
+ 
+robomaster
+1篇
+ 
+x3d
+14篇
+ 
+JavaScript
+5篇
+ 
+vtk
+1篇
+ 
+java
+1篇
+ 
+threejs
+17篇
+ 
+flask
+2篇
+ 
+html
+3篇
+ 
+ifcopenshell
+1篇
+ 
+pcl
+1篇
+ 
+webgl
+5篇
+ 
+canvas
+1篇
+展开 
+归档
+2020年1月 
+3篇
+2019年11月 
+3篇
+2019年10月 
+2篇
+2019年8月 
+20篇
+2019年7月 
+9篇
+2019年6月 
+5篇
+2019年5月 
+8篇
+2019年4月 
+15篇
+2019年3月 
+28篇
+2019年2月 
+8篇
+2019年1月 
+19篇
+2018年12月 
+5篇
+2018年11月 
+3篇
+2018年9月 
+3篇
+展开 
+热门文章
+（研究生）LaTex论文排版：插入图片及相关功能 
+阅读数 3545
+robomaster机器视觉（c++/python:opencv）：1.识别装甲板两边光条 
+阅读数 3479
+PythonOCC入门进阶到实战 
+阅读数 3279
+conda环境下的包的卸载 
+阅读数 3268
+pythonocc入门指导：1.搭建pythonocc的虚拟开发环境 
+阅读数 2976
+最新评论
+pythonOCC例子搬运：5.显... 
+weixin_44110998：感谢大佬分享 
+threejs:从入门,进阶到实战 
+fanglrui：嗯，厉害，高实在是高啊 
+threejs:从入门,进阶到实战 
+m0_38120735：？？？？？？ 
+opencv：双目视觉 ——实现详... 
+weixin_45919647：[reply]gxw987[/reply]怎样转置呢 
+
+
+kefu@csdn.net 
+
+QQ客服
+
+客服论坛
+
+400-660-0108 
+工作时间 8:30-22:00
+关于我们招聘广告服务 网站地图
+京ICP备19004658号 经营性网站备案信息
+公安备案号 11010502030143
+©1999-2020 北京创新乐知网络技术有限公司 网络110报警服务
+北京互联网违法和不良信息举报中心
+中国互联网举报中心家长监护版权申诉
+
+
+
+
+
+1 
+
+
+
+
+
+   
+
+ 
+举报

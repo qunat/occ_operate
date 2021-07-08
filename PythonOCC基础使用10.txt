@@ -1,0 +1,691 @@
+
+
+
+pythonocc基础使用：1.读取/写入brep，iges，step，stl文件
+原创
+小新快跑123 最后发布于2018-12-16 23:15:10 阅读数 1654 
+
+收藏 
+展开 
+总目录 >> PythonOCC入门进阶到实战(目前已更新入门篇、基础篇和进阶篇)
+
+对于cad系统的开发，读入外界的文件很重要。
+目前OCC开发者已经支持快速读入brep,igs,stp,stl格式了（但是这部分的资源目前还未同步到0.18.1版本），具体使用方法见下
+1.读取/写入 brep 格式文件
+brep作为opencascade官方推出的格式，内核对其解析会更快。
+参考：https://www.opencascade.com/doc/occt-7.3.0/overview/html/occt_user_guides__brep_wp.html
+##brep作为occ原生的格式，加载速度快，需要特别注意。
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
+from OCC.Display.SimpleGui import init_display
+from OCC.Core.BRepTools import breptools_Read,breptools_Write
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.BRep import BRep_Builder
+
+
+# 建造一个正方体，并写入brep
+box_shp = BRepPrimAPI_MakeBox(10, 20, 20).Shape()
+
+breptools_Write(box_shp,'box.brep')
+print("已经成功写入brep")
+
+#读入一个brep
+read_box = TopoDS_Shape()
+builder = BRep_Builder()
+breptools_Read(read_box, 'box.brep', builder)
+
+
+
+display, start_display, add_menu, add_function_to_menu = init_display()
+display.DisplayShape(read_box, update=True)
+start_display()
+
+
+2.读取/写入 iges，step，stl格式文件
+from OCC.Display.SimpleGui import init_display
+from OCC.Extend.DataExchange import read_iges_file,read_step_file,read_stl_file
+shapes=read_iges_file(fileName1)
+#shapes=read_step_file(fileName1)
+#shapes=read_stl_file(fileName1)
+display, start_display, add_menu, add_function_to_menu = init_display()
+display.DisplayShape(shapes, update=True)
+1
+2
+3
+4
+5
+6
+7
+如果你懒得去找官方写的资源，我下面也会展示read_iges_file，read_step_file，read_stl_file函数是如何定义的：
+read_iges_file函数
+def read_iges_file(filename, return_as_shapes=False, verbosity=False):
+    """ read the IGES file and returns a compound
+    filename: the file path
+    return_as_shapes: optional, False by default. If True returns a list of shapes,
+                      else returns a single compound
+    verbosity: optionl, False by default.
+    """
+
+    assert os.path.isfile(filename)
+
+    iges_reader = IGESControl_Reader()
+    status = iges_reader.ReadFile(filename)
+
+    _shapes = []
+
+    if status == IFSelect_RetDone:  # check status
+        if verbosity:
+            failsonly = False
+            iges_reader.PrintCheckLoad(failsonly, IFSelect_ItemsByEntity)
+            iges_reader.PrintCheckTransfer(failsonly, IFSelect_ItemsByEntity)
+        iges_reader.TransferRoots()
+        nbr = iges_reader.NbRootsForTransfer()
+        for n in range(1, nbr+1):
+            nbs = iges_reader.NbShapes()
+            if nbs == 0:
+                print("At least one shape in IGES cannot be transfered")
+            elif nbr == 1 and nbs == 1:
+                a_res_shape = iges_reader.Shape(1)
+                if a_res_shape.IsNull():
+                    print("At least one shape in IGES cannot be transferred")
+                else:
+                    _shapes.append(a_res_shape)
+            else:
+                for i in range(1, nbs+1):
+                    a_shape = iges_reader.Shape(i)
+                    if a_shape.IsNull():
+                        print("At least one shape in STEP cannot be transferred")
+                    else:
+                        _shapes.append(a_shape)
+    # if not return as shapes
+    # create a compound and store all shapes
+    if not return_as_shapes:
+        builder = BRep_Builder()
+        compound = TopoDS_Compound()
+        builder.MakeCompound(compound)
+        for s in _shapes:
+            builder.Add(compound, s)
+        _shapes = compound
+    return _shapes
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+read_step_file函数
+def read_step_file(filename, return_as_shapes=False, verbosity=False):
+    """ read the STEP file and returns a compound
+    filename: the file path
+    return_as_shapes: optional, False by default. If True returns a list of shapes,
+                      else returns a single compound
+    verbosity: optionl, False by default.
+    """
+    assert os.path.isfile(filename)
+
+    step_reader = STEPControl_Reader()
+    status = step_reader.ReadFile(filename)
+
+    if status == IFSelect_RetDone:  # check status
+        if verbosity:
+            failsonly = False
+            step_reader.PrintCheckLoad(failsonly, IFSelect_ItemsByEntity)
+            step_reader.PrintCheckTransfer(failsonly, IFSelect_ItemsByEntity)
+        ok = step_reader.TransferRoot(1)
+        _nbs = step_reader.NbShapes()
+        shape_to_return = step_reader.Shape(1)  # a compound
+        assert not shape_to_return.IsNull()
+    else:
+        raise AssertionError("Error: can't read file.")
+    if return_as_shapes:
+        shape_to_return = TopologyExplorer(shape_to_return).solids()
+
+    return shape_to_return
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+read_stl_file函数
+def read_stl_file(filename):
+    """ opens a stl file, reads the content, and returns a BRep topods_shape object
+    """
+    assert os.path.isfile(filename)
+
+    stl_reader = StlAPI_Reader()
+    the_shape = TopoDS_Shape()
+    stl_reader.Read(the_shape, filename)
+
+    assert not the_shape.IsNull()
+
+    return the_shape
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+
+点赞 
+
+收藏
+
+分享
+
+
+ 
+小新快跑123 
+发布了101 篇原创文章 · 获赞 42 · 访问量 7万+
+私信 
+关注
+展开阅读全文 
+
+
+
+
+ 
+ 
+
+i_红林3个月前
+请问pythonocc如何导出三维模型数据携带有模型的基本数据（如长、宽、高、厚度、颜色等等），另导出文件能写出（除了brep，iges，step，stl文件）其他格式的文件吗？！！如写出.ifc或.obj等格式的文件，，，十分感谢！！
+
+
+
+m0_451624518个月前
+读入STEP文件的时候，提示找不到文件，是哪里出错了？望指教
+
+
+pythonocc基础使用：导入模型——OCAF(iges/step) 
+阅读数 88 
+总目录 >> PythonOCC入门进阶到实战(目前已更新入门篇、基础篇和进阶篇)简单的模型文件的读取包括iges/step/stl,以及gltf和stl,obj等文件。最后呈现出的结果是... 
+博文
+来自： weixin_42755384的博客
+PythonOCC 3D图形库学习—导入STEP模型 
+阅读数 337 
+PythonOCC comes with importers/exporters for the most commonly used standard data files format in en... 
+博文
+来自： weixin_34162401的博客
+vs+qt实现OCC读取IGS模型和STEP模型并显示 
+阅读数 1106 
+前几天找了IGS的读取的简单实现，找到了一个能按博客操作步骤做了一定修改后勉强能实现的，具体实现参考我上一个博客。后来发现有个occQt的例子，是一个大神几年前根据occ在qt下写的，看了源码，感觉做... 
+博文
+来自： jiashou2471的博客
+PythonOCC入门进阶到实战 
+阅读数 3287 
+本教程的目的各位看客能搜到本篇教程，想必是奔着软件开发来的，使用python开发一款特定功能的cad/cae软件，如果你有什么不懂，可以随时联系我：QQ1185753125我也不再废话，希望借助此教程... 
+博文
+来自： weixin_42755384的博客
+
+
+pythonocc基础使用：外部模型——格式转换（iges，step，stl） 
+阅读数 472 
+占坑。 
+博文
+来自： weixin_42755384的博客
+怎样用step读取step文件中的特征信息 
+05-20
+如何用MFC实现读取.step文件中的数据? 急!
+论坛
+有点复杂的问题，.stl文件的读入 
+04-18
+小弟近日要编个程，读入.STL格式的模型（比如一个立方体），然后给不同地方上的（比如立方体的每个面）三角面加上属性，还要统计各个点的坐标和编号，然后转换成另一种格式的文件输出。 由于入门C++不到1个
+论坛
+OPENGL如何读入IGES文件 
+05-26
+有没有人读过IGES的文件啊， 128,1,1,1,1,0,0,1,0,0,0.0D0,0.0D0,1.0D0,1.0D0,0.0D0,0.0D0,1.0D0, 0000011P 6 1.0D0,1.
+论坛
+[求助] python调用第三方工具库的小project(有偿) 
+11-26
+正在作一个小项目，本人学得流体机械，现在需要用python来完成一个自动化循环过程。 主要是对编程无力。 项目目的很简单的，对于专业编程人员来说。 现在求助大家，并且因为事件紧迫，需要在3周内完成，所
+论坛
+pythonocc基础使用:导入模型——OCAF(iges/step)_weixi..._CSDN博客 
+1-1 
+PythonOCC 3D图形库学习—导入STEP模型_Python_weixin..._CSDN博客 
+2-14 
+
+
+OpenGl读取iGes文件 
+05-08
+OpenGl读取iGes文件的源程序，各位能给个程序否，好像很复杂，急用，所以小弟来这里求了。
+论坛
+pythonocc基础使用:导入模型——ifc格式(ifcopenshell..._CSDN博客 
+11-18 
+PythonOCC基础使用:建模——倒角倒圆(二维+三维)_weixi..._CSDN博客 
+1-11 
+用python和pythonOCC写的一个简单的CAD程序 
+09-09
+用python和pythonOCC写的一个简单的CAD程序。相当简陋，许多功能尚未实现。可以画简单的几何体：块体，球，圆锥，圆柱，线，圆弧等。 
+下载
+关注
+weixin_34162401
+
+4551篇文章
+排名:千里之外
+
+关注
+x70
+
+2篇文章
+排名:千里之外
+
+关注
+Opengs7
+
+30篇文章
+排名:千里之外
+
+PythonOCC基础使用:建模——布尔运算(Boolean operatio..._CSDN博客 
+1-26 
+PythonOCC基础使用:基础建模指令(重要!!!)_weixin_4275..._CSDN博客 
+1-6 
+Ubuntu 19.10 安装 美化 优化 conky Docker 
+阅读数 2万+ 
+Ubuntu终极美化1.附上我的截图： 
+博文
+来自： Hunter808的博客
+pythonocc基础使用：模型信息获取（装配关系，材料，颜色）XCAF 
+阅读数 424 
+占坑。。。 
+博文
+来自： weixin_42755384的博客
+PythonOCC入门进阶到实战_weixin_42755384的博客-CSDN博客 
+1-4 
+PythonOCC 教程0: 介绍与入门方法_QJXLSQQYS123的博客-CSDN博客 
+1-6 
+PythonOCC基础使用：建模——布尔运算（Boolean operation） 
+阅读数 410 
+布尔剪（Boolean cut）my_cylinder = BRepPrimAPI_MakeCylinder (gp_Ax2 (gp_Pnt(-3,5,2),gp_Dir (1,0,1)),1,20)... 
+博文
+来自： weixin_42755384的博客
+
+
+pythonocc的安装_a1099313374的博客-CSDN博客 
+1-7 
+Python 基础（一）：入门必备知识 
+阅读数 14万+ 
+Python 入门必备知识，你都掌握了吗？ 
+博文
+来自： 程序之间
+C++读取STL模型文件 
+阅读数 1万+ 
+数据格式二进制的数据格式：二进制STL文件用固定的字节数来给出三角面片的几何信息。【80】文件起始的80个字节是文件头，用于存贮文件名【4】紧接着用 4 个字节的整数来描述模型的三角面片个数(小端存储... 
+博文
+来自： 在云端
+STL文件读写操作 
+阅读数 2147 
+#include &lt;iostream&gt;#include &lt;fstream&gt;#include &lt;string&gt;usin... 
+博文
+来自： how0723的博客
+python vtk 读取三维raw数据存为stl 
+阅读数 1219 
+1、安装vtk；2、读取三维raw、显示、保存为stl；import vtk# Read 3D RAW imagereader=vtk.vtkImageReader()# reader.SetData... 
+博文
+来自： qq_34798326的博客
+STL文件 
+阅读数 5693 
+STL文件 
+博文
+来自： ytffhew的博客
+
+
+如何读取STL文件？ 
+阅读数 3256 
+STL文件有两种文件格式，分别是二进制的stl和Ascii格式的stl。下面将针对这文件的两个格式，用C语言分别写出一段简单的示例代码。一、读取二进制的STL文件（1）二进制stl文件的结构文件起始的... 
+博文
+来自： qq_28249373的博客
+pythonocc入门指导：2.PyCharm连接pythonOCC开发环境，并运行一个简单实例 
+阅读数 1802 
+如果你已经阅读了1.创建pythonocc虚拟环境，那么接下来将实际运行一个测试实例，完成第一个程序... 
+博文
+来自： weixin_42755384的博客
+PythonOCC基础使用：opencascade三维建模命令——一个链轮的绘制（很重要） 
+阅读数 320 
+先上效果图：import sysfrom math import pi as M_PI, sin, cos, atanfrom OCC.Core.gp import (gp_Pnt2d, gp_Ax2... 
+博文
+来自： weixin_42755384的博客
+Revit API 开发 (9): BRepBuilder 创建原生几何图形 
+阅读数 67 
+前言原生集合图形的好处不言而喻，如何创建一个复杂的原生图形，Revit API 也提供了对应的功能。流程如何使用 BRepBuilder 创建一个圆柱体，并且用DirectShape在Revit中创建... 
+博文
+来自： 极客BIM工作室
+写了很久，这是一份最适合/贴切普通大众/科班/非科班的『学习路线』 
+阅读数 7万+ 
+说实话，对于学习路线这种文章我一般是不写的，大家看我的文章也知道，我是很少写建议别人怎么样怎么样的文章，更多的是，写自己的真实经历，然后供大家去参考，这样子，我内心也比较踏实，也不怕误导他人。但是，最... 
+博文
+来自： 帅地
+python下stl格式转换off格式 
+阅读数 2524 
+学习python，做了一个将三维模型数据stl格式文件转换成off文件的小例子，用到了正则表达式、文件读写、字典等功能，可以作为初学python的一个练习小程序。内容介绍如下：1 stl格式文件是一种... 
+博文
+来自： renjiangui的博客
+python 读取3D obj文件 
+阅读数 1万+ 
+给自己的写的虽然感觉自己cmake文件的编写已经掌握的差不多了，各种库的调用也写了相应的文件，用时直接include就行。但是相比于python，c++还是复杂的多，于是这次决心好好学学python的... 
+博文
+来自： 长虹剑的专栏
+OpenCASCADE BRepTools 
+阅读数 695 
+Abstract. OpenCASCADE BRepTools provides utilities for BRep data structure. OuterWire method to find... 
+博文
+来自： henry的专栏
+PyGrADS可以很方便地将GrADS中的变量导入Python内存空间 
+阅读数 3313 
+请看下面的例子:from pylab import *from grads import GrADS# Start GrADS and open the data file# ------------... 
+博文
+来自： 网海水手
+pythonOCC例子搬运：1.显示三维轮廓 
+阅读数 444 
+core_display_customize_prs3d.py本例从https://github.com/tpaviot/pythonocc-demos搬运而来运行版本：0.18.1 在其余版本运行不... 
+博文
+来自： weixin_42755384的博客
+nginx学习，看这一篇就够了：下载、安装。使用：正向代理、反向代理、负载均衡。常用命令和配置文件 
+阅读数 5万+ 
+文章目录前言一、nginx简介1. 什么是 nginx 和可以做什么事情2.Nginx 作为 web 服务器3. 正向代理4. 反向代理5. 动静分离6.动静分离二、Nginx 的安装三、 Ngin... 
+博文
+来自： 冯安晨
+VTK-Python 4. 从文件读取STL数据 
+阅读数 2237 
+#!/usr/bin/env pythonimport vtkdef main(): # create data mannualy # cylinder = vtk.vtkCylinder... 
+博文
+来自： genispan的专栏
+三维图形数据格式 STL的 读取 
+阅读数 1万+ 
+在wiki上有对STL图形文件格式的详细描述。http://en.wikipedia.org/wiki/STL_(file_format)STL文件格式分为两种：ASCII字符格式，及二进制格式。AS... 
+博文
+来自： viewcode的专栏
+python 画几何图形 
+阅读数 3299 
+# 多边形的画法def ployon(num, distance):#     bob.color('blue', 'red')    bob.color("red", "yellow")     f... 
+博文
+来自： bianfu2008zhi的专栏
+STL文件格式和IGES的文件格式 
+阅读数 3410 
+一.STL文件格式STL只能用来表示封闭的面或者体，stl文件有两种:一种是明码格式，另一种是二进制格式。 他的文件格式非常简单明码:solid namefacet normal ni nj nkou... 
+博文
+来自： Polaris
+怎么导出三维模型文件stl？ 
+阅读数 2万+ 
+用三维建模软件（如ug，proe，solidworks，catia）进行建模，最后另存为.stl格式就可以了。STL是用三角网格来表现3D CAD模型。STL只能用来表示封闭的面或者体，stl文件有两... 
+博文
+来自： wide288 的短文
+求！有人会用c语言编程STL文件并以三维形式展现出来吗！ 
+07-23
+请问有没有人知道如何用c语言编程显示STL 文件并以三维形式展现出来，最好举个例子零零散散的我不知道怎么拼接，在下一小白，我已经琢磨了很长时间了可是一直没有进展，如果有人能帮忙解决，万分感谢！！！
+论坛
+C++——之STL部分常用总结——笔记 
+阅读数 1717 
+一、STL =Standard Template Library标准模板库，惠普实验室开发的一系列软件的统称。它是由Alexander Stepanov、Meng Lee和David R Musser... 
+博文
+来自： qinze5857的博客
+利用python实现 CAD STEP格式转化为STL格式 
+阅读数 2399 
+由于STEP格式需要专门的制图工具才能打开,有一些客户会要求以格式更为简单的STL 显示,代码如下:1:下载FreeCAD  https://www.freecadweb.org/wiki/Downl... 
+博文
+来自： Two_Brother的博客
+SecureCRT的下载、安装（ 过程非常详细！！值得查看） 
+阅读数 2万+ 
+SecureCRT的下载、安装和破解（ 过程非常详细！！值得查看）简单介绍下SecureCRT一、SecureCRT的下载二、SecureCRT的安装简单介绍下SecureCRTSecureCRT是一... 
+博文
+来自： 超Ren专属
+python json java mysql pycharm android linux json格式 c#常量定义规则 c#发送按键 c#记住帐号密码 c#mvc框架搭建 c#改变td值 c#怎么读取html文件 c#如何跳出整个循环 c# throw的用法 c# 判断域名端口 c#前景怎么样 
+©️2019 CSDN 皮肤主题: 大白 设计师: CSDN官方博客 
+ 
+小新快跑123 
+TA的个人主页 >
+原创
+101
+粉丝
+89
+获赞
+42
+评论
+35
+访问
+7万+
+等级:
+
+周排名:
+6467 
+积分:
+1919 
+总排名:
+3万+ 
+勋章:
+ 
+ 
+ 
+关注
+私信
+
+
+最新文章
+PythonOCC基础使用：点的性质(glsl定义) 
+PythonOCC基础使用：面打孔(holes in face) 
+pythonocc基础使用：导入模型——OCAF(iges/step) 
+three.js小程序：概述 
+PythonOCC封装：2.重新封装pythonocc 
+分类专栏
+ 
+threejs小程序
+1篇
+ 
+webassembly
+2篇
+ 
+assemblyscript
+1篇
+ 
+latex
+3篇
+ 
+pythonocc
+46篇
+ 
+pyqt
+1篇
+ 
+linux
+4篇
+ 
+opencv
+23篇
+ 
+cadquery
+ 
+django
+1篇
+ 
+Python
+2篇
+ 
+c++
+1篇
+ 
+robomaster
+1篇
+ 
+x3d
+14篇
+ 
+JavaScript
+5篇
+ 
+vtk
+1篇
+ 
+java
+1篇
+ 
+threejs
+17篇
+ 
+flask
+2篇
+ 
+html
+3篇
+ 
+ifcopenshell
+1篇
+ 
+pcl
+1篇
+ 
+webgl
+5篇
+ 
+canvas
+1篇
+展开 
+归档
+2020年1月 
+3篇
+2019年11月 
+3篇
+2019年10月 
+2篇
+2019年8月 
+20篇
+2019年7月 
+9篇
+2019年6月 
+5篇
+2019年5月 
+8篇
+2019年4月 
+15篇
+2019年3月 
+28篇
+2019年2月 
+8篇
+2019年1月 
+19篇
+2018年12月 
+5篇
+2018年11月 
+3篇
+2018年9月 
+3篇
+展开 
+热门文章
+（研究生）LaTex论文排版：插入图片及相关功能 
+阅读数 3545
+robomaster机器视觉（c++/python:opencv）：1.识别装甲板两边光条 
+阅读数 3479
+PythonOCC入门进阶到实战 
+阅读数 3279
+conda环境下的包的卸载 
+阅读数 3268
+pythonocc入门指导：1.搭建pythonocc的虚拟开发环境 
+阅读数 2976
+最新评论
+pythonOCC例子搬运：5.显... 
+weixin_44110998：感谢大佬分享 
+threejs:从入门,进阶到实战 
+fanglrui：嗯，厉害，高实在是高啊 
+threejs:从入门,进阶到实战 
+m0_38120735：？？？？？？ 
+opencv：双目视觉 ——实现详... 
+weixin_45919647：[reply]gxw987[/reply]怎样转置呢 
+
+
+kefu@csdn.net 
+
+QQ客服
+
+客服论坛
+
+400-660-0108 
+工作时间 8:30-22:00
+关于我们招聘广告服务 网站地图
+京ICP备19004658号 经营性网站备案信息
+公安备案号 11010502030143
+©1999-2020 北京创新乐知网络技术有限公司 网络110报警服务
+北京互联网违法和不良信息举报中心
+中国互联网举报中心家长监护版权申诉
+
+
+
+
+
+2 
+
+
+
+
+
+
+   
+
+ 
+举报

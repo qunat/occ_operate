@@ -1,0 +1,162 @@
+
+
+PythonOCC基础使用：建模——三维特征运算（拉伸/放样/管道/沿路径放样
+原创
+小新快跑123 最后发布于2019-07-12 01:01:10 阅读数 484 
+
+收藏 
+展开 
+- 此处特别感谢小昌！
+1. 拉伸
+第一种情况：封闭曲线拉伸
+
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeRevol
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax1, gp_Dir
+
+E11 = BRepBuilderAPI_MakeEdge(gp_Pnt(40.,0.,0.), gp_Pnt(82.5,25.,0.)).Edge()
+E12 = BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25.,0.), gp_Pnt(42.5,93.,0.)).Edge()
+E13 = BRepBuilderAPI_MakeEdge(gp_Pnt(42.5,93.,0.), gp_Pnt(0.,68.,0.)).Edge()
+E14 = BRepBuilderAPI_MakeEdge(gp_Pnt(0.,68.,0.), gp_Pnt(40.,0.,0.)).Edge()
+W1 = BRepBuilderAPI_MakeWire(E11,E12,E13,E14)
+
+S =BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(W1.Wire()).Face(),gp_Vec(0.,0,50))
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(W1.Shape(),update=True)
+    display.DisplayShape(S.Shape(), update=True)
+
+
+
+    start_display()
+
+第二种情况：非封闭曲线拉伸
+-
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeRevol
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax1, gp_Dir
+
+E11 = BRepBuilderAPI_MakeEdge(gp_Pnt(40.,0.,0.), gp_Pnt(82.5,25.,0.)).Edge()
+E12 = BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25.,0.), gp_Pnt(42.5,93.,0.)).Edge()
+E13 = BRepBuilderAPI_MakeEdge(gp_Pnt(42.5,93.,0.), gp_Pnt(0.,68.,0.)).Edge()
+E14 = BRepBuilderAPI_MakeEdge(gp_Pnt(0.,68.,0.), gp_Pnt(40.,10.,0.)).Edge()
+W1 = BRepBuilderAPI_MakeWire(E11,E12,E13,E14)
+
+S =BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(W1.Wire()).Face(),gp_Vec(0.,0,50))
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(W1.Shape(),update=True)
+    display.DisplayShape(S.Shape(), update=True)
+
+
+
+    start_display()
+
+第三种情况：空心图形拉伸
+占坑。
+2. 旋转拉伸
+
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism, BRepPrimAPI_MakeRevol
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Ax1, gp_Dir
+
+E11 = BRepBuilderAPI_MakeEdge(gp_Pnt(40.,0.,0.), gp_Pnt(82.5,25.,0.)).Edge()
+E12 = BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25.,0.), gp_Pnt(42.5,93.,0.)).Edge()
+E13 = BRepBuilderAPI_MakeEdge(gp_Pnt(42.5,93.,0.), gp_Pnt(0.,68.,0.)).Edge()
+E14 = BRepBuilderAPI_MakeEdge(gp_Pnt(0.,68.,0.), gp_Pnt(40.,0.,0.)).Edge()
+W1 = BRepBuilderAPI_MakeWire(E11,E12,E13,E14)
+
+A=BRepPrimAPI_MakeRevol(BRepBuilderAPI_MakeFace(W1.Wire()).Face(),gp_Ax1(gp_Pnt(0,0,0),gp_Dir(0,1,0) ))
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(W1.Shape(), update=True)
+    display.DisplayShape(A.Shape(), update=True)
+    start_display()
+
+17
+3. 放样
+
+from OCC.Core.AIS import AIS_Shape
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_ThruSections
+from OCC.Core.gp import gp_Pnt
+from OCC.Display.SimpleGui import init_display
+
+# 做第一条封闭曲线（四边形）
+E11=BRepBuilderAPI_MakeEdge(gp_Pnt(40,0,0),gp_Pnt(82.5,25,0)).Edge()
+E12=BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25,0),gp_Pnt(42.5,93,0)).Edge()
+E13=BRepBuilderAPI_MakeEdge(gp_Pnt(42.5,93,0),gp_Pnt(0,68,0)).Edge()
+E14=BRepBuilderAPI_MakeEdge(gp_Pnt(0,68,0),gp_Pnt(40,0,0)).Edge()
+
+W1=BRepBuilderAPI_MakeWire(E11,E12,E13,E14)
+
+# 做第2条封闭曲线（三角形）
+E21=BRepBuilderAPI_MakeEdge(gp_Pnt(40,0,10),gp_Pnt(82.5,25,10)).Edge()
+E22=BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25,10),gp_Pnt(42.5,93,10)).Edge()
+E23=BRepBuilderAPI_MakeEdge(gp_Pnt(42.5,93,10),gp_Pnt(40,0,10)).Edge()
+
+W2=BRepBuilderAPI_MakeWire(E21,E22,E23)
+
+generator=BRepOffsetAPI_ThruSections(True)
+
+generator.AddWire(W1.Wire())
+generator.AddWire(W2.Wire())
+
+ais=AIS_Shape(generator.Shape())
+
+generator.Build()
+
+
+
+display, start_display, add_menu, add_function_to_menu = init_display()
+
+display.DisplayShape(W1.Shape(),update=True)
+display.DisplayShape(W2.Shape(),update=True)
+# display.DisplayShape(generator.Shape(),update=True)
+display.DisplayShape(ais.Shape(),update=True)
+start_display()
+
+39
+4. 管道（实体）
+
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire, BRepBuilderAPI_MakeFace
+from OCC.Core.BRepOffsetAPI import BRepOffsetAPI_MakePipe
+from OCC.Core.gp import gp_Circ, gp_Ax2, gp_Pnt, gp_Dir
+
+
+E21=BRepBuilderAPI_MakeEdge(gp_Pnt(40,0,10),gp_Pnt(82.5,25,10)).Edge()
+E22=BRepBuilderAPI_MakeEdge(gp_Pnt(82.5,25,10),gp_Pnt(42.5,93,10)).Edge()
+
+W2=BRepBuilderAPI_MakeWire(E21,E22)
+
+c=gp_Circ(gp_Ax2(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0)), 10)
+
+Ec = BRepBuilderAPI_MakeEdge(c).Edge()
+Wc = BRepBuilderAPI_MakeWire(Ec).Wire()
+F = BRepBuilderAPI_MakeFace(Wc, True)
+S = BRepOffsetAPI_MakePipe(W2.Wire(), F.Shape())# 第一个参数 轨迹线，第二个参数是轮廓线
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(S.Shape(), update=True)
+    start_display()
+
+
+ 
+
+
+
+
+
+
+
+   
+
+ 
+举报

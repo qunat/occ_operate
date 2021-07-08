@@ -1,0 +1,110 @@
+
+
+PythonOCC基础使用：建模——基础三维实体（球体，长方体，棱柱/台/锥，圆柱/锥/台，环形）
+原创
+小新快跑123 最后发布于2019-08-02 00:48:10 阅读数 1705 
+
+收藏 
+展开 
+下面会列举一些基本三维图形命令：
+工作招募，一起来实现国产云端CAD—> 几何算法开发工程师（三维CAD）
+长方体
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
+from OCC.Display.OCCViewer import rgb_color
+#长方体
+my_box = BRepPrimAPI_MakeBox (10,10,10).Shape()
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_box,update=True,color=rgb_color(0,1,0))
+    start_display()
+
+球体
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeSphere
+from OCC.Core.gp import gp_Pnt
+from OCC.Display.OCCViewer import rgb_color
+#qiu
+center=gp_Pnt(5,5,10)
+radius=19
+my_sphere =BRepPrimAPI_MakeSphere(center ,radius).Shape()
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_sphere, update=True)
+    display.DisplayShape(my_sphere, update=True, color=rgb_color(0, 1,0 ))
+    start_display()
+
+圆锥（gp_Ax2可以理解为射线，是由一点和法线组成）
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeSphere, BRepPrimAPI_MakeCone
+from OCC.Core.gp import gp_Pnt, gp_Ax2, gp_Dir
+from OCC.Display.OCCViewer import rgb_color
+#圆锥
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+my_cone=BRepPrimAPI_MakeCone(gp_Ax2 (gp_Pnt(0,0,0),gp_Dir (0,0,-1)),0,2,4).Shape( )
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_cone, update=True)
+    # display.DisplayShape(my_cone, update=True, color=rgb_color(0, 1, 1 ))
+    start_display()
+
+圆台
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeSphere, BRepPrimAPI_MakeCone
+from OCC.Core.gp import gp_Pnt, gp_Ax2, gp_Dir
+from OCC.Display.OCCViewer import rgb_color
+#圆台
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+my_cone=BRepPrimAPI_MakeCone(gp_Ax2 (gp_Pnt(0,0,0),gp_Dir (0,0,-1)),1,2,4).Shape( )
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_cone, update=True)
+    # display.DisplayShape(my_cone, update=True, color=rgb_color(0, 1, 1 ))
+    start_display()
+
+圆柱
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+#圆柱
+my_cylinder=BRepPrimAPI_MakeCylinder(10,50).Shape()
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_cylinder,update=True)
+    start_display()
+
+环形
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeTorus
+from OCC.Core.gp import gp_Pnt
+from OCC.Core.gp import gp_Ax2,gp_Dir
+my_Torus = BRepPrimAPI_MakeTorus(gp_Ax2 (gp_Pnt (0,0,2),gp_Dir (0,0,1)),0.55,0.1).Shape()
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_Torus, update=True)
+    start_display()
+
+棱锥
+
+my_wedge = BRepPrimAPI_MakeWedge(gp_Ax2(gp_Pnt(4, 0,4), gp_Dir(1,1,0)),4,4,4,2,2,2,2).Shape()
+1
+棱台
+
+my_wedge = BRepPrimAPI_MakeWedge(gp_Ax2 (gp_Pnt (-4,-8,-4),gp_Dir (0,0,1)),4,4,8,1,1,3,7).Shape()
+1
+棱柱
+
+my_wedge1 = BRepPrimAPI_MakeWedge(gp_Ax2(gp_Pnt(2, -6, -4), gp_Dir(0, 0, 1)), 2, 3, 4, 1).Shape()
+1
+
+
+
+
+
+ 
+ 

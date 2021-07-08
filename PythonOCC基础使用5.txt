@@ -1,0 +1,159 @@
+
+
+
+PythonOCC基础使用：建模——矩阵变换（平移/旋转/缩放/镜像）
+原创
+小新快跑123 最后发布于2019-07-12 01:14:56 阅读数 346 
+
+收藏 
+展开 
+此处特别感谢小昌做出的贡献！
+1.平移
+效果图：
+
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+from OCC.Core.TopLoc import TopLoc_Location
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.gp import gp_Pnt, gp_Trsf, gp_Vec, gp_Ax1, gp_Dir
+from OCC.Display.OCCViewer import rgb_color
+
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+cone=TopoDS_Shape(my_cone)
+T=gp_Trsf()
+T.SetTranslation(gp_Vec(0,5,0))
+loc=TopLoc_Location(T)
+cone.Location(loc)
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(my_cone, update=True,color=rgb_color(1,0,0))
+    display.DisplayShape(cone, update=True,color=rgb_color(0,0,1))
+    start_display()
+
+2.旋转
+效果图：
+
+from OCC.Core.GeomAPI import GeomAPI_Interpolate
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.TColgp import TColgp_HArray1OfPnt
+from OCC.Core.gp import gp_Pnt, gp_Ax1, gp_Dir, gp_Circ, gp_Elips,gp_Trsf,gp_Vec
+from OCC.Core.TopLoc import TopLoc_Location
+from OCC.Core.GC import GC_MakeSegment, GC_MakeCircle, GC_MakeArcOfCircle, GC_MakeEllipse,GC_MakeRotation
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+from OCC.Display.OCCViewer import rgb_color
+#旋转
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+cone=TopoDS_Shape(my_cone)
+T1=gp_Trsf()
+T=gp_Ax1(gp_Pnt(0, 1, 0), gp_Dir(0, 6, 4))
+T1.SetRotation(T,1)
+coneLoc=TopLoc_Location(T1)
+my_cone.Move(coneLoc)
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(cone,update=True,color=rgb_color(0,0,0))
+    display.DisplayShape(my_cone, update=True,color=rgb_color(1,0,0))
+    start_display()
+
+3.缩放
+效果图：
+
+from OCC.Core.GeomAPI import GeomAPI_Interpolate
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.TColgp import TColgp_HArray1OfPnt
+from OCC.Core.gp import gp_Pnt, gp_Ax1, gp_Dir, gp_Circ, gp_Elips,gp_Trsf,gp_Vec
+from OCC.Core.TopLoc import TopLoc_Location
+from OCC.Core.GC import GC_MakeSegment, GC_MakeCircle, GC_MakeArcOfCircle, GC_MakeEllipse,GC_MakeRotation
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+from OCC.Display.OCCViewer import rgb_color
+#缩放
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+cone=TopoDS_Shape(my_cone)
+T1=gp_Trsf()
+T=gp_Pnt(0, 20, 0)
+T1.SetScale(T,5)
+coneLoc=TopLoc_Location(T1)
+my_cone.Move(coneLoc)
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape(cone,update=True,color=rgb_color(0,0,0))
+    display.DisplayShape(my_cone, update=True,color=rgb_color(1,0,0))
+    start_display()
+
+4.镜像
+效果图：
+
+from OCC.Core.TColgp import TColgp_HArray1OfPnt
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+from OCC.Core.gp import gp_Pnt, gp_Ax1, gp_Dir, gp_Circ, gp_Elips,gp_Trsf,gp_Vec
+from OCC.Core.TopLoc import TopLoc_Location
+from OCC.Core.TopoDS import TopoDS_Shape
+from OCC.Core.GC import GC_MakeSegment, GC_MakeCircle, GC_MakeArcOfCircle, GC_MakeEllipse,GC_MakeRotation
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+from OCC.Display.OCCViewer import rgb_color
+#镜像
+my_cone = BRepPrimAPI_MakeCone(1,0,4).Shape()
+cone=TopoDS_Shape(my_cone)
+T1 = gp_Trsf()
+T=gp_Ax1(gp_Pnt(0,6,0),gp_Dir(0,4,1))
+T1.SetMirror(T)
+coneLoc=TopLoc_Location(T1)
+my_cone.Move(coneLoc)
+
+if __name__ == "__main__":
+    from OCC.Display.SimpleGui import init_display
+    display, start_display, add_menu, add_function_to_menu = init_display()
+    display.DisplayShape( my_cone, update=True, color=rgb_color( 1, 0, 0 ) )
+    display.DisplayShape(cone,update=True,color=rgb_color(0,0,0))
+    start_display()
+
+5.以上效果叠加(占坑)
+参考链接：http://www.cppblog.com/eryar/archive/2015/01/22/209612.html
+
+点赞 
+
+收藏
+
+分享
+
+
+ 
+小新快跑123 
+发布了101 篇原创文章 · 获赞 42 · 访问量 7万+
+私信 
+关注
+展开阅读全文 
+
+
+
+
+ 
+ 
+Python实现图像平移、旋转、水平镜像等 
+阅读数 1万+ 
+一、图像平移二、图像水平镜像三、图像垂直镜像四、图像缩放五、图像旋转Python代码实现：importcv2importmathimportnumpyasnpclassImg:def__init__(... 
+博文
+来自： 长路漫漫
+python对列进行平移变换(shift) 
+阅读数 2万+ 
+python对列进行平移变换(shift)在进行数据操作时,经常会碰到基于同一列进行错位相加减的操作,即对某一列进行向上或向下平移(shift).往常,我们都会使用循环进行操作,但经过查阅相关资料,发... 
+博文
+来自： kizgel的博客
+PythonOCC基础使用：基础建模指令(重要!!!) 
+阅读数 2950 
+opencascade的c++版的入门教程(https://www.opencascade.com/doc/occt-7.2.0/overview/html/occt__tutorial.html#s... 
+博文
+来自： weixin_42755384的博客
+用python和pythonOCC写的一个简单的CAD程序 
+09-09
+用python和pythonOCC写的一个简单的CAD程序。相当简陋，许多功能尚未实现。可以画简单的几何体：块体，球，圆锥，圆柱，线，圆弧等。 
+下载
+
+

@@ -1,0 +1,778 @@
+
+PythonOCC基础使用：基础建模指令(重要!!!)
+原创
+小新快跑123 最后发布于2019-05-25 16:38:31 阅读数 2951 
+
+收藏 
+展开 
+总目录 >> PythonOCC入门进阶到实战(目前已更新入门篇、基础篇和进阶篇)
+欢迎加入pythonocc的中文社区QQ群：860536842 获取更多信息
+工作招募，一起来实现国产云端CAD—> 几何算法开发工程师（三维CAD）
+opencascade的c++版的入门教程(https://www.opencascade.com/doc/occt-7.2.0/overview/html/occt__tutorial.html#sec1)讲述基础知识,是以建造一个瓶子作为例子,在这个过程中将使用的函数进行了细致的讲解.
+pythonocc的基础教程也会遵循此原则.接下来我们将完成瓶子的建造.
+
+定义模型
+
+模型的建造将分为四个步骤：
+建造瓶子的轮廓（profile）
+建造瓶子的实体（body）
+建造瓶颈处的螺纹（thread）
+结果混合（及轮廓加本体加螺纹）
+一、建造瓶子的轮廓（profile）
+1.定义支撑点
+要创建瓶子的轮廓，首先要创建特征点及其坐标，如下面（xoy）平面中所示。这些点将是定义轮廓几何图形的支撑。
+
+我们将会使用如下函数来描述 三维坐标点（使用笛卡尔坐标系：xyz坐标系）from OCC.Core.gp import gp_Pnt
+点函数gp_Pnt
+aPnt1 = gp_Pnt(-width / 2.0, 0, 0)
+aPnt2 = gp_Pnt(-width / 2.0, -thickness / 4.0, 0)
+aPnt3 = gp_Pnt(0, -thickness / 2.0, 0)
+aPnt4 = gp_Pnt(width / 2.0, -thickness / 4.0, 0)
+aPnt5 = gp_Pnt(width / 2.0, 0, 0)
+1
+2
+3
+4
+5
+结果如图所示：
+我们可以通过aPnt1.X() 来查看具体点的x值。注意此X为大写的。同理Y，Z
+   print(aPnt1.X())
+1
+-25.0
+2.轮廓：定义几何图形（geometry）
+基础知识补充： 我们在绘制图形的时候，一般会使用到 线Geom_Line，圆形Geom_Circle，这些是属于比较简单的图形，对于更为复杂的图形，我们使用贝塞尔曲线（Bezier）和B样条曲线（bspline ）
+借助先前定义的点，可以计算瓶子轮廓几何图形的一部分。如下图所示，它由两段（segments）GC_MakeSegment和一段弧（arc）组成GC_MakeArcOfCircle。
+
+from OCC.Core.GC import GC_MakeArcOfCircle, GC_MakeSegment
+1
+aArcOfCircle = GC_MakeArcOfCircle(aPnt2, aPnt3, aPnt4)
+aSegment1 = GC_MakeSegment(aPnt1, aPnt2)
+aSegment2 = GC_MakeSegment(aPnt4, aPnt5)
+1
+2
+3
+注意aArcOfCircle ，Segment此处是无法在屏幕中显示出来的，必须经过下面拓扑信息的处理
+3.轮廓：定义拓扑信息（topology）
+我们已经创建了轮廓的几何图形aArcOfCircle，Segment，但这三条曲线是独立的，彼此之间没有关系。为了简化建模，将这三条曲线作为一个实体进行操作。这可以通过使用 TopoDS包 （topology data structure 拓扑信息结构）来实现：它定义几何图形、实体之间的关系，这些几何图形、实体可以链接在一起以表示更加复杂的形状。
+
+参考上面的表格，建造轮廓的思路，应如下：
+三条曲线（edge：edge1，edge2，edge3）
+由三组曲线构成一条线（wire）
+
+使用BRepBuilderAPI_MakeEdge 类可以做出曲线（edge），使用BRepBuilderAPI_MakeWire类可以做出线（wire）
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeWire
+1
+aEdge1 = BRepBuilderAPI_MakeEdge(aSegment1.Value())
+aEdge2 = BRepBuilderAPI_MakeEdge(aArcOfCircle.Value())
+aEdge3 = BRepBuilderAPI_MakeEdge(aSegment2.Value())
+
+aWire = BRepBuilderAPI_MakeWire(aEdge1.Edge(), aEdge2.Edge(), aEdge3.Edge())
+
+1
+2
+3
+4
+5
+6
+显示如上的东西，需要注意使用aEdge2.Edge()，aWire.Wire()才可以displayShape显示出来。
+4.完成轮廓
+基础知识补充：要对形状（包括线，体）进行矩阵转换，我么借助的是 gp_Trsf 类；这种矩阵变换可以是平移、旋转、缩放、镜像或这些的组合。
+我们的wire线进行镜面对称后，可以完成轮廓。因此我们需要定义一个关于全局坐标系X轴；gp_Ax1这个类可以用来定任意轴（因此我们可以使用该类定义x轴）；此类需要两个参数：点，方向（三维矢量）。当然x轴还有更简单的方法gp_OX()
+from OCC.Core.BRepBuilderAPI import  BRepBuilderAPI_Transform
+from OCC.Core.TopoDS import topods
+from OCC.Core.gp import  gp_OX, gp_Trsf
+1
+2
+3
+# 指定x轴
+xAxis = gp_OX()
+
+# 定义镜像
+aTrsf = gp_Trsf()# 定义一个矩阵变换
+aTrsf.SetMirror(xAxis)#矩阵变换内容为 对x轴进行镜像
+
+# 运用矩阵变换：镜像
+aBRespTrsf = BRepBuilderAPI_Transform(aWire.Wire(), aTrsf)
+aMirroredShape = aBRespTrsf.Shape()#得到shape
+aMirroredWire = topods.Wire(aMirroredShape)#得到镜像后的wire
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+将现有wire添加至更大的wire中，最终得到myWireProfile
+mkWire = BRepBuilderAPI_MakeWire()
+mkWire.Add(aWire.Wire())
+mkWire.Add(aMirroredWire)
+myWireProfile = mkWire.Wire()
+1
+2
+3
+4
+二、建造瓶子实体（body）
+1.实体化轮廓（其实就是拉伸轮廓）
+要实现瓶子的建造，首先需要创建一个实体形状。最简单的方法是使用先前创建的轮廓并沿方向拉伸。Prism函数可以实现相应功能；它接受一个形状和一个方向作为输入，并根据以下规则生成一个新形状：
+
+目前我们生成 的轮廓是线（wire），参考形状生成表（见上），我们需要首先生成面（face），然后才能体（solid）。
+我们使用如下函数：
+BRepBuilderAPI_MakeFace，根据闭合线生成面
+BRepPrimAPI_MakePrism，拓扑信息实体化，支持最简单的方体，锥形，圆柱，球体，还有基础形状的扫略拉伸，（注意：扫描，拉伸，回转拉伸本质相同）
+为了生成实体，我们使用以下代码：
+from OCC.Core.gp import  gp_Vec
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakePrism
+1
+2
+3
+#计算面
+myFaceProfile = BRepBuilderAPI_MakeFace(myWireProfile)
+
+#计算体
+aPrismVec = gp_Vec(0, 0, height)#指定有限向量finite vector
+myBody = BRepPrimAPI_MakePrism(myFaceProfile.Face(), aPrismVec)
+myBody.Shape()
+1
+2
+3
+4
+5
+6
+7
+
+2.倒圆角
+为所有的边（edge）倒角，并且倒角的半径为厚度的1/12
+
+为了完成该功能，我们将使用如下函数：
+BRepFilletAPI_MakeFillet 类，该类（你可以指定你想倒的任意边edge，并不是所有的边都必须倒的）
+TopExp_Explorer 类，为了使用倒角函数，需要知道边edges，而这个TopExp_Explorer 函数可以用来探索该实体的edge，返回的结果为子形状（sub-shape）；同时该函数的经常会使用其子函数More，Current，Next 放进循环中，他们分别代表 是否有更多子形状去挖掘，知道当前被探索到的子形状是哪一个，移动到下一个子形状去探索。
+在探索边的函数TopExp_Explorer 中，我们会取得所有edge，然后成为倒角的边，以下为实现函数：
+#指定倒角实体
+mkFillet=BRepFilletAPI_MakeFillet(myBody.Shape())
+#探索实体中的边edge
+anEdgeExplorer = TopExp_Explorer(myBody.Shape(), TopAbs_EDGE)
+
+#进行探索循环
+while anEdgeExplorer.More():
+	#获得当前边
+    anEdge = topods.Edge(anEdgeExplorer.Current())
+	#倒角当前边
+    mkFillet.Add(thickness/12.,anEdge)
+	#移动下一个边
+    anEdgeExplorer.Next()
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+运行displayShape(mkFillet.Shape())可以显示如下图：
+
+3.添加瓶子的颈部
+要在瓶子上加一个瓶颈，首先将创建一个圆柱体，并将其与瓶身融合（fuse合并）。半径为厚度的1/4。高度为高度的1/10。
+
+要定位圆柱体，需要使用gp_Ax2类定义坐标系，（之前的ax1坐标系仅仅只有一个方向）从一个点和两个方向Z轴方向和X方向定义右手坐标系（Y方向自动计算出来）。为了使得颈部与瓶身顶面中心对齐，（也就是处在全局坐标系下的（0，0，myheight）可以定义一个局部坐标系；
+同时为了生成圆柱体 ，我们使用BRepPrimAPI_MakeCylinder 类
+neckLocation=gp_Pnt(0,0,height)
+neckAxis=gp_DZ()
+neckAx2=gp_Ax2(neckLocation,neckAxis)
+
+neckRadius=thickness/4
+neckHeight=height/10
+MKCylibnder=BRepPrimAPI_MakeCylinder(neckAx2,neckRadius,neckHeight)
+
+myBody= BRepAlgoAPI_Fuse(mkFillet.Shape(),MKCylibnder.Shape()
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+4.创建一个中空的实体
+我们现在创建的瓶子是实体，不能够装水，因此我们需要将其挖空，分为以下步骤：
+移去一个或多余的面，获得一个壁的表面W1
+获取一个平行的表面w2（D是正值，则w2在外面，D是负值，则在里面）
+从w1和w2中计算实体
+
+为此我们可以使用 BRepOffsetAPI_MakeThickSolid类来去实现有一定厚度的实体。要找到具有这些特征的面，我们将使用explorer函数寻找合适的面face。
+在探测每一个面的时候，我们需要知道每一个面的几何特征（即他到底是平面还是曲面。）因此我们使用BRep_Tool 类，其中Surface 去探测面face，Curve 去探测边edge，Point去探测 点 vertex。
+而我们想要确认的是 是不是平面，我们将使用到 Geom_Plane类。
+对于形状的收集是 TopTools 包，因为BRepOffsetAPI_MakeThickSolid 需要一系列的东西，正好使用到TopTools_ListOfShape 类.
+代码如下：
+def face_is_plane(face):
+    """
+      如果TopoDS_Shape是平面, 则返回True
+    """
+    hs = BRep_Tool_Surface(face)
+    downcast_result = Geom_Plane.DownCast(hs)
+    # 如果不能往下转换downcast， 说明这个面不是平面
+    if downcast_result is None:
+        return False
+    else:
+        return True
+
+
+def geom_plane_from_face(aFace):
+    """
+    返回一个平面
+    """
+    return Geom_Plane.DownCast(BRep_Tool_Surface(aFace))
+
+faceToRemove = None
+zMax = -1
+
+# We have to work our way through all the faces to find the highest Z face so we can remove it for the shell
+aFaceExplorer = TopExp_Explorer(myBody.Shape(), TopAbs_FACE)
+while aFaceExplorer.More():
+    aFace = topods.Face(aFaceExplorer.Current())
+
+    if face_is_plane(aFace):
+        aPlane = geom_plane_from_face(aFace)
+
+        # We want the highest Z face, so compare this to the previous faces
+        aPnt = aPlane.Location()
+        aZ = aPnt.Z()
+        if aZ > zMax:
+            zMax = aZ
+            faceToRemove = aFace
+
+    aFaceExplorer.Next()
+
+facesToRemove = TopTools_ListOfShape()
+facesToRemove.Append(faceToRemove)
+
+myBody = BRepOffsetAPI_MakeThickSolid(myBody.Shape(), facesToRemove, -thickness / 50.0, 0.001)
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+
+三、创建螺纹（thread）
+
+点赞 3 
+
+收藏
+
+分享
+
+
+ 
+小新快跑123 
+发布了101 篇原创文章 · 获赞 42 · 访问量 7万+
+私信 
+关注
+展开阅读全文 
+
+
+
+
+ 
+ 
+
+xinger20194个月前
+#OCC建模开始！ display, start_display, add_menu, add_function_to_menu = init_display() #定义4个点 aPnt1 = gp_Pnt(2,2,0) aPnt2 = gp_Pnt(2,0,0) aPnt3 = gp_Pnt(0,0,0) aPnt4 = gp_Pnt(0,2,0) #每3个点形成一条线 aArcOfCircle1 = GC_MakeArcOfCircle(aPnt1, aPnt2, aPnt3) aArcOfCircle1 = GC_MakeArcOfCircle(aPnt1, aPnt4, aPnt3) #组合两条线 aEdge1 = BRepBuilderAPI_MakeEdge(aArcOfCircle1.Value()) aEdge2 = BRepBuilderAPI_MakeEdge(aArcOfCircle2.Value()) aWire = BRepBuilderAPI_MakeWire(aEdge1.Edge(),aEdge2.Edge()) # 最终完成轮廓 mkWire = BRepBuilderAPI_MakeWire() myWireProfile = aWire.Wire() #得到面 myFaceProfile = BRepBuilderAPI_MakeFace(myWireProfile) #指定有限向量finite vector,为拉伸方向和距离 aPrismVec = gp_Vec(0,0,1) #得到体 result_model = BRepPrimAPI_MakePrism(myFaceProfile.Face(), aPrismVec).Shape() display.DisplayColoredShape(result_model) start_display() 请问我为什么显示不出来一个瓶子？一片灰
+
+
+
+珠有泪4个月前谢谢
+
+
+
+王遥9个月前谢谢
+
+
+
+草莓味小可爱9个月前谢谢
+
+
+PythonOCC基础使用：opencascade三维建模命令——一个链轮的绘制（很重要） 
+阅读数 319 
+先上效果图：import sysfrom math import pi as M_PI, sin, cos, atanfrom OCC.Core.gp import (gp_Pnt2d, gp_Ax2... 
+博文
+来自： weixin_42755384的博客
+用python和pythonOCC写的一个简单的CAD程序 
+09-09
+用python和pythonOCC写的一个简单的CAD程序。相当简陋，许多功能尚未实现。可以画简单的几何体：块体，球，圆锥，圆柱，线，圆弧等。 
+下载
+爬虫小程序 - 爬取王者荣耀全皮肤 
+阅读数 17万+ 
+王者荣耀全皮肤图片爬取 
+博文
+来自： 君莫笑
+c++制作的植物大战僵尸（开源项目） 
+阅读数 4万+ 
+此游戏全部由本人自己制作完成。游戏大部分的素材来源于原版游戏素材，少部分搜集于网络，以及自己制作。 此游戏为同人游戏而且仅供学习交流使用，任何人未经授权，不得对本游戏进行更改、盗用等，否则后果自负。目... 
+博文
+来自： 尔灵尔亿的博客
+
+
+什么是大公司病（太形象了） 
+阅读数 7万+ 
+点击蓝色“五分钟学算法”关注我哟加个“星标”，天天中午 12:15，一起学算法作者 | 南之鱼来源 | 芝麻观点（chinamkt）所谓大企业病，一般都具有机构臃肿、多重...... 
+博文
+来自： 程序员吴师兄的博客
+一文读懂一台计算机是如何把数据发送给另一台计算机的 
+阅读数 1万+ 
+来源：苦逼的码农（ID：di201805）前言天各一方的两台计算机是如何通信的呢？在成千上万的计算机中，为什么一台计算机能够准确着寻找到另外一台计算机，并且把数据发送给它...... 
+博文
+来自： Java团长的博客
+PythonOCC基础使用：模型阵列 
+阅读数 215 
+占坑 
+博文
+来自： weixin_42755384的博客
+Python——画一棵漂亮的樱花树（不同种樱花+玫瑰+圣诞树喔） 
+阅读数 24万+ 
+最近翻到一篇知乎，上面有不少用Python（大多是turtle库）绘制的树图，感觉很漂亮，我整理了一下，挑了一些我觉得不错的代码分享给大家（这些我都测试过，确实可以生成）one 樱花树 动态生成樱花效... 
+博文
+来自： 碎片
+深深的码丨Java HashMap 透析 
+阅读数 1万+ 
+HashMap 相关概念HashTab、HashMap、TreeMap 均以键值对像是存储或操作数据元素。HashTab继承自Dictionary，HashMap、TreeMap继承自Abstract... 
+博文
+来自： 全栈工程师
+PythonOCC基础使用:opencascade三维建模命令——一个链..._CSDN博客 
+1-11 
+PythonOCC基础使用:模型阵列 - weixin_42755384的博客 - CSDN博客 
+11-18 
+
+
+Python 基础（一）：入门必备知识 
+阅读数 14万+ 
+Python 入门必备知识，你都掌握了吗？ 
+博文
+来自： 程序之间
+PythonOCC基础使用:建模——倒角倒圆(二维+三维)_weixi..._CSDN博客 
+1-11 
+PythonOCC基础使用:建模——布尔运算(Boolean operatio..._CSDN博客 
+1-26 
+PythonOCC基础使用：建模——三维特征运算（拉伸/放样/管道/沿路径放样 
+阅读数 484 
+占坑。 
+博文
+来自： weixin_42755384的博客
+关注
+君莫笑.
+
+114篇文章
+排名:千里之外
+
+关注
+尔灵尔亿
+
+20篇文章
+排名:千里之外
+
+关注
+程序员吴师兄
+
+541篇文章
+排名:3000+
+
+PythonOCC基础使用:建模——三维特征运算(拉伸/放样/管..._CSDN博客 
+11-27 
+PythonOCC入门进阶到实战_weixin_42755384的博客-CSDN博客 
+1-4 
+PythonOCC基础使用：曲面建模 
+阅读数 198 
+占坑 
+博文
+来自： weixin_42755384的博客
+接私活必备的 10 个开源项目！ 
+阅读数 2万+ 
+点击蓝色“GitHubDaily”关注我加个“星标”，每天下午 18:35，带你逛 GitHub！作者 | SevDot来源 | http://1t.click/VE8Web 开发中几乎的平台都需要一... 
+博文
+来自： 南木的博客
+pythonocc入门指导:2.PyCharm连接pythonOCC开发环境,并..._CSDN博客 
+1-8 
+PythonOCC外延学习:cadquery_weixin_42755384的博客-CSDN博客 
+1-14 
+Java入门学习路线目录索引（持续更新中） 
+阅读数 4万+ 
+新增：使用IDEA搭建SpringBoot框架整合Mybatis、MySQL、Thymeleaf实现用户查询、注册、登录一、Java基础Java基础-继承 Java基础-抽象 Java基础-接口 Ja... 
+博文
+来自： oneStar的博客
+
+
+PythonOCC基础使用:建模——三维特征运算(拉伸/放样/管道/沿路径... 
+12-15 
+我花了一夜用数据结构给女朋友写个H5走迷宫游戏 
+阅读数 40万+ 
+起因又到深夜了，我按照以往在csdn和公众号写着数据结构！这占用了我大量的时间！我的超越妹妹严重缺乏陪伴而 怨气满满！而女朋友时常埋怨，认为数据结构这么抽象难懂的东西没啥作用，常会问道：天天写这玩意，... 
+博文
+来自： bigsai
+pythonocc入门指导：1.搭建pythonocc的虚拟开发环境 
+阅读数 2981 
+0.前言pythonOCC也就是opencascade的python封装版本1.所需材料anacondaAnaconda指的是一个开源的Python发行版本，其包含了conda、Python等180多... 
+博文
+来自： weixin_42755384的博客
+PythonOCC基础使用：建模——倒角倒圆（二维+三维） 
+阅读数 225 
+占坑 
+博文
+来自： weixin_42755384的博客
+pythonocc入门指导：2.PyCharm连接pythonOCC开发环境，并运行一个简单实例 
+阅读数 1802 
+如果你已经阅读了1.创建pythonocc虚拟环境，那么接下来将实际运行一个测试实例，完成第一个程序... 
+博文
+来自： weixin_42755384的博客
+从入门到精通，Java学习路线导航（附学习资源） 
+阅读数 10万+ 
+引言最近也有很多人来向我"请教"，他们大都是一些刚入门的新手，还不了解这个行业，也不知道从何学起，开始的时候非常迷茫，实在是每天回复很多人也很麻烦，所以在这里统一作个回复吧。Java学习路线当然，这里... 
+博文
+来自： java_sha的博客
+
+
+程序员必须掌握的核心算法有哪些？ 
+阅读数 40万+ 
+由于我之前一直强调数据结构以及算法学习的重要性，所以就有一些读者经常问我，数据结构与算法应该要学习到哪个程度呢？，说实话，这个问题我不知道要怎么回答你，主要取决于你想学习到哪些程度，不过针对这个问题，... 
+博文
+来自： 帅地
+pythonocc基础使用：导入模型——ifc格式（ifcopenshell） 
+阅读数 706 
+借用pythonocc强大的内核功能，我们同样可以读取建筑CAD信息，ifc 格式。此处我们将参考ifcopenshell https://github.com/IfcOpenShell/IfcOpe... 
+博文
+来自： weixin_42755384的博客
+PythonOCC基础使用：建模——三维特征运算（拉伸/放样/管道/沿路径放样） 
+阅读数 72 
+本文链接：https://blog.csdn.net/weixin_42755384/article/details/95546422拉伸第一种情况：封闭曲线拉伸from OCC.Core.BRepB... 
+博文
+来自： Allure392491308的博客
+开源一个功能完整的SpringBoot项目框架 
+阅读数 7万+ 
+福利来了，给大家带来一个福利。最近想了解一下有关Spring Boot的开源项目，看了很多开源的框架，大多是一些demo或者是一个未成形的项目，基本功能都不完整，尤其是用户权限和菜单方面几乎没有完整的... 
+博文
+网页实现一个简单的音乐播放器（大佬别看。(⊙﹏⊙)） 
+阅读数 8万+ 
+今天闲着无事，就想写点东西。然后听了下歌，就打算写个播放器。于是乎用h5 audio的加上js简单的播放器完工了。演示地点演示html代码如下` music 这个年纪 七月的风... 
+博文
+来自： qq_44210563的博客
+PythonOCC入门进阶到实战 
+阅读数 3286 
+本教程的目的各位看客能搜到本篇教程，想必是奔着软件开发来的，使用python开发一款特定功能的cad/cae软件，如果你有什么不懂，可以随时联系我：QQ1185753125我也不再废话，希望借助此教程... 
+博文
+来自： weixin_42755384的博客
+字节跳动视频编解码面经 
+阅读数 14万+ 
+三四月份投了字节跳动的实习（图形图像岗位），然后hr打电话过来问了一下会不会opengl，c++，shador，当时只会一点c++，其他两个都不会，也就直接被拒了。七月初内推了字节跳动的提前批，因为内... 
+博文
+来自： ljh_shuai的博客
+pythonOCC例子搬运：3.选中体/面/边/点 并分析性质 
+阅读数 565 
+core_display_signal_slots.py本例从https://github.com/tpaviot/pythonocc-demos搬运而来运行版本：0.18.1 在其余版本运行不保证正... 
+博文
+来自： weixin_42755384的博客
+情人节到了，适合程序员表白的情话【保你脱单】 
+阅读数 1万+ 
+谁说我们程序员不浪漫，这些情话只有程序员能看懂 
+博文
+来自： 扬帆向海的博客
+如何优雅地打印一个Java对象？ 
+阅读数 1万+ 
+你好呀，我是沉默王二，一个和黄家驹一样身高，和刘德华一样颜值的程序员。虽然已经写了十多年的 Java 代码，但仍然觉得自己是个菜鸟（请允许我惭愧一下）。在一个月黑风高的夜晚，我思前想后，觉得再也不能这... 
+博文
+来自： 沉默王二
+Python新型冠状病毒疫情数据自动爬取+统计+发送报告+数据屏幕（三）发送篇 
+阅读数 8040 
+今天介绍的项目是使用 Itchat 发送统计报告项目功能设计：定时爬取疫情数据存入Mysql进行数据分析制作疫情报告使用itchat给亲人朋友发送分析报告基于Django做数据屏幕使用Tableau做... 
+博文
+来自： Fantasy！
+教你如何编写第一个简单的爬虫 
+阅读数 7974 
+很多人知道爬虫，也很想利用爬虫去爬取自己想要的数据，那么爬虫到底怎么用呢？今天就教大家编写一个简单的爬虫。下面以爬取笔者的个人博客网站为例获取第一篇文章的标题名称，教大家学会一个简单的爬虫。第一步：获... 
+博文
+来自： E_book
+PythonOCC基础使用：建模——布尔运算（Boolean operation） 
+阅读数 410 
+布尔剪（Boolean cut）my_cylinder = BRepPrimAPI_MakeCylinder (gp_Ax2 (gp_Pnt(-3,5,2),gp_Dir (1,0,1)),1,20)... 
+博文
+来自： weixin_42755384的博客
+PythonOCC基础使用：建模——基础三维实体（球体，长方体，棱柱/台/锥，圆柱/锥/台，环形） 
+阅读数 1705 
+下面会列举一些基本三维图形命令：长方体my_box = BRepPrimAPI_MakeBox (10,10,10).Shape()球体center=gp_Pnt(5,5,10)radius=19my... 
+博文
+来自： weixin_42755384的博客
+作为程序员的我，大学四年一直自学，全靠这些实用工具和学习网站！ 
+阅读数 2万+ 
+我本人因为高中沉迷于爱情，导致学业荒废，后来高考，毫无疑问进入了一所普普通通的大学，实在惭愧????我又是那么好强，现在学历不行，没办法改变的事情了，所以，进入大学开始，我就下定决心，一定要让自己掌握... 
+博文
+来自： 编码之外的技术博客
+如何安装 IntelliJ IDEA 最新版本——详细教程 
+阅读数 1万+ 
+IntelliJ IDEA 简称 IDEA，被业界公认为最好的 Java 集成开发工具，尤其在智能代码助手、代码自动提示、代码重构、代码版本管理(Git、SVN、Maven)、单元测试、代码分析等方面... 
+博文
+来自： 沉默王二
+PythonOCC进阶学习：软件封装——初步封装及bug排除 
+阅读数 282 
+先占个坑，待写 
+博文
+来自： weixin_42755384的博客
+14位享誉全球的程序员 
+阅读数 4万+ 
+本文转载至：http://www.cricode.com/2922.html 
+博文
+来自： 闲云孤鹤
+PythonOCC外延学习：cadquery 
+阅读数 191 
+关于CadQueryCadQuery2.0是pythonocc的高级封装库，使用了Qt语言作为界面语言，是一款正在起步的命令行建模软件，由于pythonocc的使命在于封装opencascade而非关... 
+博文
+来自： weixin_42755384的博客
+前端JS初级面试题二 
+阅读数 6918 
+1. 传统事件绑定和符合W3C标准的事件绑定有什么区别？传统事件绑定<div onclick="">123</div>div1.onclick = function(){};&... 
+博文
+来自： 今天不学习~明天变垃圾~
+SecureCRT的下载、安装（ 过程非常详细！！值得查看） 
+阅读数 2万+ 
+SecureCRT的下载、安装和破解（ 过程非常详细！！值得查看）简单介绍下SecureCRT一、SecureCRT的下载二、SecureCRT的安装简单介绍下SecureCRTSecureCRT是一... 
+博文
+来自： 超Ren专属
+python json java mysql pycharm android linux json格式 c#常量定义规则 c#发送按键 c#记住帐号密码 c#mvc框架搭建 c#改变td值 c#怎么读取html文件 c#如何跳出整个循环 c# throw的用法 c# 判断域名端口 c#前景怎么样 
+©️2019 CSDN 皮肤主题: 大白 设计师: CSDN官方博客 
+ 
+小新快跑123 
+TA的个人主页 >
+原创
+101
+粉丝
+89
+获赞
+42
+评论
+35
+访问
+7万+
+等级:
+
+周排名:
+6467 
+积分:
+1919 
+总排名:
+3万+ 
+勋章:
+ 
+ 
+ 
+关注
+私信
+
+
+最新文章
+PythonOCC基础使用：点的性质(glsl定义) 
+PythonOCC基础使用：面打孔(holes in face) 
+pythonocc基础使用：导入模型——OCAF(iges/step) 
+three.js小程序：概述 
+PythonOCC封装：2.重新封装pythonocc 
+分类专栏
+ 
+threejs小程序
+1篇
+ 
+webassembly
+2篇
+ 
+assemblyscript
+1篇
+ 
+latex
+3篇
+ 
+pythonocc
+46篇
+ 
+pyqt
+1篇
+ 
+linux
+4篇
+ 
+opencv
+23篇
+ 
+cadquery
+ 
+django
+1篇
+ 
+Python
+2篇
+ 
+c++
+1篇
+ 
+robomaster
+1篇
+ 
+x3d
+14篇
+ 
+JavaScript
+5篇
+ 
+vtk
+1篇
+ 
+java
+1篇
+ 
+threejs
+17篇
+ 
+flask
+2篇
+ 
+html
+3篇
+ 
+ifcopenshell
+1篇
+ 
+pcl
+1篇
+ 
+webgl
+5篇
+ 
+canvas
+1篇
+展开 
+归档
+2020年1月 
+3篇
+2019年11月 
+3篇
+2019年10月 
+2篇
+2019年8月 
+20篇
+2019年7月 
+9篇
+2019年6月 
+5篇
+2019年5月 
+8篇
+2019年4月 
+15篇
+2019年3月 
+28篇
+2019年2月 
+8篇
+2019年1月 
+19篇
+2018年12月 
+5篇
+2018年11月 
+3篇
+2018年9月 
+3篇
+展开 
+热门文章
+（研究生）LaTex论文排版：插入图片及相关功能 
+阅读数 3545
+robomaster机器视觉（c++/python:opencv）：1.识别装甲板两边光条 
+阅读数 3479
+PythonOCC入门进阶到实战 
+阅读数 3279
+conda环境下的包的卸载 
+阅读数 3268
+pythonocc入门指导：1.搭建pythonocc的虚拟开发环境 
+阅读数 2976
+最新评论
+pythonOCC例子搬运：5.显... 
+weixin_44110998：感谢大佬分享 
+threejs:从入门,进阶到实战 
+fanglrui：嗯，厉害，高实在是高啊 
+threejs:从入门,进阶到实战 
+m0_38120735：？？？？？？ 
+opencv：双目视觉 ——实现详... 
+weixin_45919647：[reply]gxw987[/reply]怎样转置呢 
+
+
+kefu@csdn.net 
+
+QQ客服
+
+客服论坛
+
+400-660-0108 
+工作时间 8:30-22:00
+关于我们招聘广告服务 网站地图
+京ICP备19004658号 经营性网站备案信息
+公安备案号 11010502030143
+©1999-2020 北京创新乐知网络技术有限公司 网络110报警服务
+北京互联网违法和不良信息举报中心
+中国互联网举报中心家长监护版权申诉
+
+3
+
+
+
+4 
+
+
+
+
+
+
+   
+
+ 
+举报
