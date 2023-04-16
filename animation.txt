@@ -1,0 +1,20 @@
+box = BRepPrimAPI_MakeBox(10, 20, 30).Shape()  # 创建一个大小为10x20x30的立方体
+display, start_display, add_menu, add_function_to_menu = init_display()  # 初始化显示窗口
+Abox = display.DisplayShape(box, update=True)[0]  # 在显示窗口中显示立方体
+context = AIS_InteractiveContext(display.Viewer)  # 创建交互上下文
+ax1 = gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1))  # 创建一个以原点为中心，z轴为方向的坐标系
+angle1 = 45  # 旋转角度
+trf1 = gp_Trsf()  # 创建变换矩阵trf1
+trf2 = gp_Trsf()  # 创建变换矩阵trf2
+trf2.SetRotation(ax1, angle1)  # 对变换矩阵trf2进行旋转
+name = TCollection_AsciiString("Animation1")  # 动画名称
+animation = AIS_Animation(name)  # 创建动画对象
+box_ais = AIS_AnimationObject(name, context, Abox, trf1, trf2)  # 创建立方体的动画对象
+box_ais.SetOwnDuration(10)  # 设置立方体动画的持续时间
+animation.Add(box_ais)  # 将立方体动画添加到动画对象中
+duration = animation.Duration()  # 获取动画的持续时间
+animation.StartTimer(0, 1, True)  # 启动动画计时器
+while (not animation.IsStopped()):  # 动画未停止时
+    animation.UpdateTimer()  # 更新动画计时器
+    context.UpdateCurrentViewer()  # 更新当前视图
+start_display()  # 开始显示动画
